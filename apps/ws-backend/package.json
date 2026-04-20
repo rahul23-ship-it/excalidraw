@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "prebuild": "pnpm --filter @repo/backend-common --filter @repo/db run build",
     "build": "tsc -b",
+    "predev": "pnpm --filter @repo/backend-common --filter @repo/db run build",
     "dev": "tsc -b && node dist/index.js",
     "start": "node dist/index.js"
   },
@@ -13,7 +15,8 @@
     "@types/jsonwebtoken": "^9.0.10",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3" ,
+    "@repo/db": "workspace:*"
   },
   "devDependencies": {
     "@repo/backend-common": "workspace:*",

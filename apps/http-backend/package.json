@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "prebuild": "pnpm --filter @repo/backend-common --filter @repo/common --filter @repo/db run build",
     "build": "tsc -b",
+    "predev": "pnpm --filter @repo/backend-common --filter @repo/common --filter @repo/db run build",
     "dev": "tsc -b && node dist/index.js",
     "start": "node dist/index.js"
   },
@@ -16,13 +18,14 @@
   "dependencies": {
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@repo/db": "workspace:*"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10" ,
     "@repo/backend-common": "workspace:*" ,
-    "@repo/common": "workspace:*"
+    "@repo/common": "workspace:*" 
   }
 }
