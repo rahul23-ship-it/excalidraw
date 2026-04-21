@@ -41,31 +41,39 @@ app.post("/register", async (req, res) => {
   }
 }); 
 
+
+
 app.post("/login", async (req, res) => {
   const validationResult = LoginUserSchema.safeParse(req.body);
+
   if (!validationResult.success) {
     return res.status(400).json({ error: validationResult.error.message });
   }
 
-  const { email, password } = validationResult.data;
+  const email = validationResult.data.email;
+  const password = validationResult.data.password;
+
   try {
-  const user = await prismaClient.user.findFirst({
-    where : {
-      email : email ,
-      password : password
+    const user = await prismaClient.user.findUnique({
+      where: {
+        email: email
+      }
+    });
+
+    if (!user || user.password !== password) {
+      return res.status(401).json({ error: "Invalid email or password" });
     }
-  }) ;
-  if (user) {
+
     const token = jwt.sign({ userId: user.id }, JWT_SECRET);
     return res.json({ token });
-  } else {
-    return res.status(401).json({ error: "Invalid email or password" });
-  }
+
   } catch (error) {
-    console.error("Error during login:", error);
+    console.error("Error logging in user:", error);
     return res.status(500).json({ error: "Internal server error" });
-  } 
+  }
 });
+
+
 
 app.post("/create-room", authenticateToken,async (req:any, res) => {
   const validationResult = CreateRoomSchema.safeParse(req.body);
@@ -83,13 +91,13 @@ app.post("/create-room", authenticateToken,async (req:any, res) => {
     return res.status(400).json({ error: validationResult.error.message });
   }
   const { slug } = validationResult.data;
-  await prismaClient.room.create({
+  const room = await prismaClient.room.create({
     data : {
       slug : slug ,
       adminId : userId
     }
   }) ;
-  return res.json({ message: "Room created successfully" });
+  return res.json({ message: "Room created successfully", roomId: room.id });
   } catch (error) {
     console.error("Error creating room:", error);
     return res.status(500).json({ error: "Internal server error" });
