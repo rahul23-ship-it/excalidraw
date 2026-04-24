@@ -90,7 +90,12 @@ app.post("/create-room", authenticateToken,async (req:any, res) => {
   if (!validationResult.success) {
     return res.status(400).json({ error: validationResult.error.message });
   }
+}catch (error) {
+    console.error("Error creating room:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
   const { slug } = validationResult.data;
+  try {
   const room = await prismaClient.room.create({
     data : {
       slug : slug ,
@@ -98,16 +103,32 @@ app.post("/create-room", authenticateToken,async (req:any, res) => {
     }
   }) ;
   return res.json({ message: "Room created successfully", roomId: room.id });
-  } catch (error) {
+  } 
+ catch (error) {
     console.error("Error creating room:", error);
+    return res.status(500).json({ error: "Internal server error , room already exists" });
+  }
+}
+); 
+
+app.get ("/chats/:roomId" , authenticateToken , async (req, res) => {
+  const roomId = Number(req.params.roomId) ;
+  try{
+    const messages = await prismaClient.chat.findMany({
+    where : {
+      roomId : roomId
+    },
+    orderBy : {
+      id : "desc"
+    },
+    take : 50 
+  }) ;
+   res.json({ messages }) ;
+  } catch (error) {
+    console.error("Error fetching chat messages:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
-}); 
-
-
-
-
-
+});
 
 const port = 3001;
 app.listen(port, () => {
