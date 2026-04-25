@@ -5,6 +5,7 @@ import {JWT_SECRET} from '@repo/backend-common/config' ;
 import { authenticateToken } from "./middleware";
 import {CreateUserSchema , LoginUserSchema , CreateRoomSchema} from '@repo/common/types' ;
 import {prismaClient} from '@repo/db/client' ;
+import { string } from "zod";
 
 const app = express();
 app.use(express.json());
@@ -124,6 +125,26 @@ app.get ("/chats/:roomId" , authenticateToken , async (req, res) => {
     take : 50 
   }) ;
    res.json({ messages }) ;
+  } catch (error) {
+    console.error("Error fetching chat messages:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get ("/chats/:slug" , authenticateToken , async (req, res) => {
+  const slugParam = req.params.slug;
+
+  if (typeof slugParam !== "string" || !slugParam.trim()) {
+    return res.status(400).json({ error: "Invalid room slug" });
+  }
+
+  try{
+    const room = await prismaClient.room.findFirst({
+    where : {
+      slug: slugParam
+    }
+  }) ;
+   res.json({ room }) ;
   } catch (error) {
     console.error("Error fetching chat messages:", error);
     return res.status(500).json({ error: "Internal server error" });
