@@ -6,9 +6,14 @@ import { authenticateToken } from "./middleware";
 import {CreateUserSchema , LoginUserSchema , CreateRoomSchema} from '@repo/common/types' ;
 import {prismaClient} from '@repo/db/client' ;
 import { string } from "zod";
+import cors from "cors" ;
 
 const app = express();
 app.use(express.json());
+app.use(cors({
+  origin: "*",
+  credentials: false
+}));
 
 app.post("/register", async (req, res) => {
   const validationResult = CreateUserSchema.safeParse(req.body);
@@ -112,26 +117,66 @@ app.post("/create-room", authenticateToken,async (req:any, res) => {
 }
 ); 
 
-app.get ("/chats/:roomId" , authenticateToken , async (req, res) => {
-  const roomId = Number(req.params.roomId) ;
-  try{
-    const messages = await prismaClient.chat.findMany({
-    where : {
-      roomId : roomId
-    },
-    orderBy : {
-      id : "desc"
-    },
-    take : 50 
-  }) ;
-   res.json({ messages }) ;
+// In-memory storage for shapes (temporary for testing)
+const shapeStorage: Record<number, any[]> = {};
+
+app.post("/chats/:roomId", async (req, res) => {
+  try {
+    const roomIdParam = req.params.roomId;
+    const { message, userId } = req.body;
+
+    if (!roomIdParam || isNaN(Number(roomIdParam))) {
+      return res.status(400).json({ error: "Invalid roomId" });
+    }
+
+    if (!message || !userId) {
+      return res.status(400).json({ error: "Message and userId required" });
+    }
+
+    const roomId = Number(roomIdParam);
+
+    // Store in memory
+    if (!shapeStorage[roomId]) {
+      shapeStorage[roomId] = [];
+    }
+    
+    const newMessage = {
+      id: shapeStorage[roomId].length + 1,
+      roomId,
+      message,
+      userId,
+      createdAt: new Date()
+    };
+    
+    shapeStorage[roomId].push(newMessage);
+
+    res.json({ success: true, message: newMessage });
   } catch (error) {
-    console.error("Error fetching chat messages:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("Error saving chat message:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-app.get ("/chats/:slug" , authenticateToken , async (req, res) => {
+app.get("/chats/:roomId", async (req, res) => {
+  try {
+    const roomIdParam = req.params.roomId;
+
+    if (!roomIdParam || isNaN(Number(roomIdParam))) {
+      return res.status(400).json({ error: "Invalid roomId" });
+    }
+
+    const roomId = Number(roomIdParam);
+
+    const messages = shapeStorage[roomId] || [];
+    
+    res.json({ messages });
+  } catch (error) {
+    console.error("Error fetching chat messages:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get ("/room/:slug" , authenticateToken , async (req, res) => {
   const slugParam = req.params.slug;
 
   if (typeof slugParam !== "string" || !slugParam.trim()) {

@@ -2,14 +2,14 @@
   "name": "@repo/db",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "generate": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "exports": {
-    "./client": "./dist/index.js"
+    "./client": "./dist/src/index.js"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
