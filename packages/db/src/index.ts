@@ -13,7 +13,7 @@ export const prismaClient = new PrismaClient({
 	adapter: new PrismaPg({
 		connectionString: process.env.DATABASE_URL,
 		ssl: { rejectUnauthorized: false },
-		connectionTimeoutMillis: 10_000,
+		connectionTimeoutMillis: 30_000,
 	}),
 });
 

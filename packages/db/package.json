@@ -4,7 +4,10 @@
   "description": "",
   "main": "dist/src/index.js",
   "scripts": {
+    "prebuild": "prisma generate",
     "build": "tsc -p tsconfig.json",
+    "predev": "prisma generate",
+    "dev": "tsc -p tsconfig.json",
     "generate": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

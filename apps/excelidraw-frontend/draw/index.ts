@@ -21,7 +21,7 @@ export async function InitDraw(canvas:HTMLCanvasElement , roomId : string , sock
 
             const ctx = canvas.getContext("2d");
 
-            let existingShapes :Shape[] = await getExisitingShapes(roomId) ;
+            let existingShapes :Shape[] = await getExisitingShapes(roomId) ; //local storage for shape data 
 
             if (!ctx) {
                 return 
@@ -61,7 +61,7 @@ export async function InitDraw(canvas:HTMLCanvasElement , roomId : string , sock
                     height ,
                     width
                 }
-                existingShapes.push(shape)
+                existingShapes.push(shape)  //push the shape to the existing shape when u draw out of the mouse  
 
                 // Save shape to backend
                 try {
@@ -83,11 +83,13 @@ export async function InitDraw(canvas:HTMLCanvasElement , roomId : string , sock
             })
 
             canvas.addEventListener("mousemove" , (e)=> {
-                if (clicked){  //only if clicked draw 
+                if (clicked){  //only if clicked  
                   const width = e.clientX - startX  //current value - start value 
                   const height = e.clientY - startY
-                  clearCanvas(existingShapes ,canvas , ctx) ;
-                  ctx.strokeStyle = "rgba(255,255,255)"
+
+                  clearCanvas(existingShapes ,canvas , ctx) ; //clear the canvas and rerenders the exisiting shapes 
+
+                  ctx.strokeStyle = "rgba(255,255,255)"   //apply white stroke style while drawing
                   ctx.strokeRect(startX ,startY ,width ,height);
                 }
               
@@ -96,11 +98,11 @@ export async function InitDraw(canvas:HTMLCanvasElement , roomId : string , sock
 
 
 function clearCanvas (existingShapes : Shape[] , canvas : HTMLCanvasElement , ctx : CanvasRenderingContext2D) {
-    ctx.clearRect(0,0,canvas.width , canvas.height);
-    ctx.fillStyle = "rgba(0,0,0)" 
+    ctx.clearRect(0,0,canvas.width , canvas.height); // clears the whole canvas 
+    ctx.fillStyle = "rgba(0,0,0)"   //fill the whole canvas with black 
     ctx.fillRect(0,0,canvas.width , canvas.height);
 
-    existingShapes.map(shape=> {
+    existingShapes.map(shape=> {  //rerenders the existing shapes
         if (shape.type === "rectangle") {
             ctx.strokeStyle = "rgba(255,255,255)"
             ctx.strokeRect(shape.x ,shape.y , shape.width , shape.height);
@@ -109,7 +111,7 @@ function clearCanvas (existingShapes : Shape[] , canvas : HTMLCanvasElement , ct
 }
 
 
-async function getExisitingShapes(roomId:string){
+async function getExisitingShapes(roomId:string){  //get existing shape data from the saved backend database using roomId 
     try {
         const res = await axios.get(`${HTTP_BACKEND}/chats/${roomId}`) ;
         const messages = res.data.messages ;
@@ -118,7 +120,7 @@ async function getExisitingShapes(roomId:string){
             return JSON.parse(x.message)
         })
 
-        return shapes
+        return shapes  // the shape data which is been returned 
     } catch (error) {
         console.error("Error fetching existing shapes:", error);
         return [];

@@ -5,7 +5,6 @@ import {JWT_SECRET} from '@repo/backend-common/config' ;
 import { authenticateToken } from "./middleware";
 import {CreateUserSchema , LoginUserSchema , CreateRoomSchema} from '@repo/common/types' ;
 import {prismaClient} from '@repo/db/client' ;
-import { string } from "zod";
 import cors from "cors" ;
 
 const app = express();
@@ -14,6 +13,21 @@ app.use(cors({
   origin: "*",
   credentials: false
 }));
+
+const connectWithRetry = async (attempts = 5, delayMs = 1_000) => {
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      await prismaClient.$connect();
+      return;
+    } catch (error) {
+      console.error("Database connection attempt failed:", error);
+      if (i === attempts - 1) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delayMs * (i + 1)));
+    }
+  }
+};
 
 app.post("/register", async (req, res) => {
   const validationResult = CreateUserSchema.safeParse(req.body);
@@ -42,10 +56,20 @@ app.post("/register", async (req, res) => {
   return res.json({ message: "User registered successfully" });
 
   } catch (error) {
-    console.error("Error registering user:");
+    console.error("Error registering user:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }); 
+
+app.get("/health/db", async (_req, res) => {
+  try {
+    await prismaClient.$queryRaw`SELECT 1`;
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Database health check failed:", error);
+    return res.status(500).json({ ok: false });
+  }
+});
 
 
 
@@ -197,6 +221,14 @@ app.get ("/room/:slug" , authenticateToken , async (req, res) => {
 });
 
 const port = 3001;
-app.listen(port, () => {
-  console.log(`http-backend listening on http://localhost:${port}`);
+const startServer = async () => {
+  await connectWithRetry();
+  app.listen(port, () => {
+    console.log(`http-backend listening on http://localhost:${port}`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
 });
